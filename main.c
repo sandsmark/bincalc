@@ -11,17 +11,35 @@ void printBits(size_t const size, void const * const ptr)
     unsigned char byte;
     int i, j;
 
+    printf(" ");
+    for (i=0; i < size * 8; i++) {
+        if (!(i % 4) && i > 0) {
+            printf(" |");
+        }
+        printf("%3lu", size*8 - i - 1);
+    }
+
+    printf("\n ");
     for (i=size-1;i>=0;i--)
     {
+        if (i < size-1) {
+            printf(" |");
+        }
         for (j=7;j>=0;j--)
         {
             if (j == 3) {
-                printf(" ");
+                printf(" |");
             }
+
             byte = (b[i] >> j) & 1;
-            printf("%u", byte);
+
+            if (byte) {
+                printf("\033[02;32m");
+            } else {
+                printf("\033[01;33m");
+            }
+            printf("  %u\033[0m", byte);
         }
-        printf(" ");
     }
     puts("");
 }
@@ -35,7 +53,7 @@ int main(int argc, char *argv[])
     long int num = strtol(argv[1], NULL, 0);
 
     if (argc > 3) {
-        int num2 = strtol(argv[3], NULL, 0);
+        long int num2 = strtol(argv[3], NULL, 0);
         switch(argv[2][0]) {
         case '&':
         case 'a':
@@ -73,9 +91,8 @@ int main(int argc, char *argv[])
             return 1;
         }
     }
+    printf("0x%lx = %ld:\n", num, num);
 
-
-    /*printnum(num);*/
     if (num < UCHAR_MAX - 1) {
         printBits(sizeof(unsigned char), &num);
     } else if (num < USHRT_MAX - 1) {
