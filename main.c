@@ -5,9 +5,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <limits.h>
+#include <gmp.h>
 
 // from user295190, http://stackoverflow.com/a/3974138
-void printBits(size_t const size, void const * const ptr)
+void printBits(size_t const size, void const * const ptr, size_t offset)
 {
     unsigned char *b = (unsigned char*) ptr;
     unsigned char byte;
@@ -18,7 +19,7 @@ void printBits(size_t const size, void const * const ptr)
         if (!(i % 4) && i > 0) {
             printf(" |");
         }
-        printf("%3lu", size*8 - i - 1);
+        printf("%4lu", size*8 - i - 1 + offset);
     }
 
     printf("\n ");
@@ -40,7 +41,7 @@ void printBits(size_t const size, void const * const ptr)
             } else {
                 printf("\033[01;33m");
             }
-            printf("  %u\033[0m", byte);
+            printf("   %u\033[0m", byte);
         }
     }
     puts("");
@@ -65,98 +66,116 @@ void printHelp(const char *progName)
 
 int main(int argc, char *argv[])
 {
-    if (argc < 2) {
+    if (argc != 2 && argc != 4) {
         printHelp(argv[0]);
         return 1;
     }
-    char *lastCharInNum;
-    long long int num = strtoll(argv[1], &lastCharInNum, 0);
+    mpz_t num;
 
-    if (lastCharInNum == argv[1]) {
+    if (mpz_init_set_str(num, argv[1], 0) < 0) {
         printHelp(argv[0]);
         return 1;
     }
 
     if (argc > 3) {
-        const long long int num1 = num;
+        mpz_t num2;
 
-        const long long int num2 = strtoll(argv[3], &lastCharInNum, 0);
-        if (lastCharInNum == argv[3]) {
+        if (mpz_init_set_str(num2, argv[3], 0) < 0) {
             printHelp(argv[0]);
             return 1;
         }
+
+        mpz_t result;
+        mpz_init(result);
 
         char op = ' ';
         switch(argv[2][0]) {
         case '&':
         case 'a':
             op = '&';
-            num &= num2;
+            mpz_and(result, num, num2);
             break;
         case '^':
         case 'x':
             op = '^';
-            num ^= num2;
+            mpz_xor(result, num, num2);
             break;
         case 'o':
         case '|':
             op = '|';
-            num |= num2;
+            mpz_ior(result, num, num2);
             break;
         case '+':
             op = '+';
-            num += num2;
+            mpz_add(result, num, num2);
             break;
         case '-':
             op = '-';
-            num -= num2;
+            mpz_sub(result, num, num2);
             break;
         case '/':
             op = '/';
-            num /= num2;
+            mpz_div(result, num, num2);
             break;
         case '*':
         case 'm':
         case 't':
             op = '*';
-            num *= num2;
+            mpz_mul(result, num, num2);
             break;
         case 'l':
         case '<':
             op = '<';
-            num <<= num2;
+            mpz_mul_2exp(result, num, mpz_get_ui(num2));
             break;
         case 'r':
         case '>':
             op = '>';
-            num >>= num2;
+            mpz_fdiv_q_2exp(result, num, mpz_get_ui(num2));
             break;
         default:
             printf("invalid syntax\n");
             printHelp(argv[0]);
             return 1;
         }
-        printf("0x%llx %c 0x%llx = 0x%llx\n", num1, op, num2, num);
-        printf("0x%lld %c 0x%lld = %lld\n\n", num1, op, num2, num);
+
+        printf("0x");
+        mpz_out_str(stdout, 16, num);
+        printf(" %c 0x", op);
+        mpz_out_str(stdout, 16, num2);
+        printf(" = ");
+        mpz_out_str(stdout, 16, result);
+        printf("\n");
+
+        mpz_out_str(stdout, 10, num);
+        printf(" %c ", op);
+        mpz_out_str(stdout, 10, num2);
+        printf(" = ");
+        mpz_out_str(stdout, 10, result);
+        printf("\n");
+
+        mpz_clear(num);
+        mpz_set(num, result);
+        mpz_clear(num2);
+        mpz_clear(result);
     } else {
-        printf("0x%llx = %lld\n\n", num, num);
+        printf("0x");
+        mpz_out_str(stdout, 16, num);
+        printf(" = ");
+        mpz_out_str(stdout, 10, num);
+        printf("\n");
     }
 
-    const size_t absNum = llabs(num);
+    size_t byteCount;
+    unsigned char *bytes = mpz_export(NULL, &byteCount, -1, 1, 1, 0, num);
 
-    if (absNum < UCHAR_MAX - 1) {
-        printBits(sizeof(unsigned char), &num);
-    } else if (absNum < USHRT_MAX - 1) {
-        printBits(sizeof(unsigned short), &num);
-    } else if (absNum < UINT_MAX - 1) {
-        printBits(sizeof(unsigned int), &num);
-    } else if (absNum < ULONG_MAX - 1) {
-        printBits(sizeof(unsigned long int), &num);
-    } else if (absNum < ULLONG_MAX - 1) {
-        printBits(sizeof(unsigned long int), &num);
-    } else {
-        printBits(sizeof(num), &num);
+    for (size_t i=0; i < byteCount; i+=4) {
+        size_t size = i + 4 > byteCount ? (byteCount % 4) : 4;
+        printBits(size, bytes + i, i * 8);
     }
+
+    free(bytes);
+    mpz_clear(num);
 
     return 0;
 }
