@@ -46,61 +46,114 @@ void printBits(size_t const size, void const * const ptr)
     puts("");
 }
 
+void printHelp(const char *progName)
+{
+    printf("usage: %s num [operator num2] \n", progName);
+
+    printf(
+            "operators:\n"
+            "\t'&' 'a[nd]'\n"
+            "\t'^' 'x[or]'\n"
+            "\t'|' 'o[r]'\n"
+            "\t'<' 'l[eftshift]'\n"
+            "\t'>' 'r[ightshift]'\n"
+            "\t'*' 'm[ultiply]'\n"
+            "\t    't[imes]'\n"
+            "\t'+' '-' '/'\n"
+    );
+}
+
 int main(int argc, char *argv[])
 {
     if (argc < 2) {
-        printf("usage: %s num [& a ^ x o | + - / * < s > num2] \n", argv[0]);
+        printHelp(argv[0]);
         return 1;
     }
-    long int num = strtol(argv[1], NULL, 0);
+    char *lastCharInNum;
+    long long int num = strtoll(argv[1], &lastCharInNum, 0);
+
+    if (lastCharInNum == argv[1]) {
+        printHelp(argv[0]);
+        return 1;
+    }
 
     if (argc > 3) {
-        long int num2 = strtol(argv[3], NULL, 0);
+        const long long int num1 = num;
+
+        const long long int num2 = strtoll(argv[3], &lastCharInNum, 0);
+        if (lastCharInNum == argv[3]) {
+            printHelp(argv[0]);
+            return 1;
+        }
+
+        char op = ' ';
         switch(argv[2][0]) {
         case '&':
         case 'a':
+            op = '&';
             num &= num2;
             break;
         case '^':
         case 'x':
+            op = '^';
             num ^= num2;
             break;
         case 'o':
         case '|':
+            op = '|';
             num |= num2;
             break;
         case '+':
+            op = '+';
             num += num2;
             break;
         case '-':
+            op = '-';
             num -= num2;
             break;
         case '/':
+            op = '/';
             num /= num2;
             break;
         case '*':
+        case 'm':
+        case 't':
+            op = '*';
             num *= num2;
             break;
+        case 'l':
         case '<':
+            op = '<';
             num <<= num2;
             break;
-        case 's':
+        case 'r':
         case '>':
+            op = '>';
             num >>= num2;
             break;
         default:
             printf("invalid syntax\n");
+            printHelp(argv[0]);
             return 1;
         }
+        printf("0x%llx %c 0x%llx = 0x%llx\n", num1, op, num2, num);
+        printf("0x%lld %c 0x%lld = %lld\n\n", num1, op, num2, num);
+    } else {
+        printf("0x%llx = %lld\n\n", num, num);
     }
-    printf("0x%lx = %ld:\n", num, num);
 
-    if (num < UCHAR_MAX - 1) {
+    const size_t absNum = llabs(num);
+
+    if (absNum < UCHAR_MAX - 1) {
         printBits(sizeof(unsigned char), &num);
-    } else if (num < USHRT_MAX - 1) {
+    } else if (absNum < USHRT_MAX - 1) {
         printBits(sizeof(unsigned short), &num);
-    } else if (num < UINT_MAX - 1) {
+    } else if (absNum < UINT_MAX - 1) {
         printBits(sizeof(unsigned int), &num);
+    } else if (absNum < ULONG_MAX - 1) {
+        printBits(sizeof(unsigned long int), &num);
+    } else if (absNum < ULLONG_MAX - 1) {
+        printBits(sizeof(unsigned long int), &num);
     } else {
         printBits(sizeof(num), &num);
     }
