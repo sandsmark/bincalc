@@ -1,5 +1,7 @@
 //  Dumb and simple binary calculator
-//  cc by-sa 3.0
+// Copyright 2018 Martin Sandsmark
+// This work is licensed under a Creative Commons Attribution Share-Alike 4.0 License.
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <limits.h>
