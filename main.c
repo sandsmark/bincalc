@@ -8,7 +8,7 @@
 #include <gmp.h>
 
 // from user295190, http://stackoverflow.com/a/3974138
-void printBits(size_t const size, void const * const ptr, size_t offset)
+void printBits(size_t const size, void const * const ptr, size_t offset, int negate)
 {
     unsigned char *b = (unsigned char*) ptr;
     unsigned char byte;
@@ -23,18 +23,18 @@ void printBits(size_t const size, void const * const ptr, size_t offset)
     }
 
     printf("\n ");
-    for (i=size-1;i>=0;i--)
-    {
+    for (i=size-1;i>=0;i--) {
         if (i < size-1) {
             printf(" |");
         }
-        for (j=7;j>=0;j--)
-        {
+
+        for (j=7;j>=0;j--) {
             if (j == 3) {
                 printf(" |");
             }
 
             byte = (b[i] >> j) & 1;
+            byte ^= negate;
 
             if (byte) {
                 printf("\033[02;32m");
@@ -139,43 +139,55 @@ int main(int argc, char *argv[])
             return 1;
         }
 
-        printf("0x");
-        mpz_out_str(stdout, 16, num);
-        printf(" %c 0x", op);
-        mpz_out_str(stdout, 16, num2);
-        printf(" = ");
-        mpz_out_str(stdout, 16, result);
-        printf("\n");
-
-        mpz_out_str(stdout, 10, num);
-        printf(" %c ", op);
-        mpz_out_str(stdout, 10, num2);
-        printf(" = ");
-        mpz_out_str(stdout, 10, result);
-        printf("\n");
+        gmp_printf("  %Zd %c %Zd   = %Zd\n", num, op, num2, result);
+        gmp_printf("0x%Zx %c 0x%Zx = 0x%Zx\n", num, op, num2, result);
 
         mpz_clear(num);
         mpz_set(num, result);
         mpz_clear(num2);
         mpz_clear(result);
     } else {
-        printf("0x");
-        mpz_out_str(stdout, 16, num);
-        printf(" = ");
-        mpz_out_str(stdout, 10, num);
-        printf("\n");
+        gmp_printf("0x%Zx=%Zd\n", num, num);
     }
 
-    size_t byteCount;
-    unsigned char *bytes = mpz_export(NULL, &byteCount, -1, 1, 1, 0, num);
+    if (mpz_fits_slong_p(num)) {
+        signed long int intNum = mpz_get_si(num);
+        const size_t absNum = llabs(intNum);
+        if (absNum < CHAR_MAX - 1) {
+            printBits(sizeof(unsigned char), &intNum, 0, 0);
+        } else if (absNum < SHRT_MAX - 1) {
+            printBits(sizeof(unsigned short), &intNum, 0, 0);
+        } else if (absNum < INT_MAX - 1) {
+            printBits(sizeof(unsigned int), &intNum, 0, 0);
+        } else if (absNum < LONG_MAX - 1) {
+            printBits(sizeof(unsigned long int), &intNum, 0, 0);
+        } else {
+            printBits(sizeof(num), &num, 0, 0);
+        }
 
-    for (size_t i=0; i < byteCount; i+=4) {
-        size_t size = i + 4 > byteCount ? (byteCount % 4) : 4;
-        printBits(size, bytes + i, i * 8);
+        if (absNum < INT_MAX - 1) {
+            int thirtytwobits = intNum;
+            float *fakeFloat = (float*)&thirtytwobits;
+            if (*fakeFloat) {
+                printf("As 32bit float: %f\n", *fakeFloat);
+            }
+
+            int64_t sixtyfourbits = intNum;
+            double *fakeDouble = (double*)&sixtyfourbits;
+            if (*fakeDouble > 0) {
+                printf("As 64bit float: %lf\n", *fakeDouble);
+            }
+        }
+    } else {
+        size_t byteCount;
+        unsigned char *bytes = mpz_export(NULL, &byteCount, -1, 1, 1, 0, num);
+
+        for (size_t i=0; i < byteCount; i+=4) {
+            size_t size = i + 4 > byteCount ? (byteCount % 4) : 4;
+            printBits(size, bytes + i, i * 8, mpz_sgn(num) < 0);
+        }
+        free(bytes);
     }
-
-    free(bytes);
-    mpz_clear(num);
 
     return 0;
 }
