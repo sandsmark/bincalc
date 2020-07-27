@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <limits.h>
+#include <math.h>
 #include <gmp.h>
 
 // from user295190, http://stackoverflow.com/a/3974138
@@ -153,34 +154,74 @@ int main(int argc, char *argv[])
     if (mpz_fits_slong_p(num)) {
         signed long int intNum = mpz_get_si(num);
         const size_t absNum = llabs(intNum);
-        if (absNum < CHAR_MAX - 1) {
+        if (absNum < UCHAR_MAX - 1) {
             printBits(sizeof(unsigned char), &intNum, 0, 0);
-        } else if (absNum < SHRT_MAX - 1) {
+        } else if (absNum < USHRT_MAX - 1) {
             printBits(sizeof(unsigned short), &intNum, 0, 0);
-        } else if (absNum < INT_MAX - 1) {
+        } else if (absNum < UINT_MAX - 1) {
             printBits(sizeof(unsigned int), &intNum, 0, 0);
-        } else if (absNum < LONG_MAX - 1) {
+        } else if (absNum < ULONG_MAX - 1) {
             printBits(sizeof(unsigned long int), &intNum, 0, 0);
         } else {
             printBits(sizeof(num), &num, 0, 0);
         }
 
-        if (absNum < INT_MAX - 1) {
+        if (absNum < UINT_MAX - 1) {
             int thirtytwobits = intNum;
             float *fakeFloat = (float*)&thirtytwobits;
-            if (*fakeFloat) {
-                printf("As 32bit float: %f\n", *fakeFloat);
+            printf("As 32bit float: ");
+            switch(fpclassify(*fakeFloat)) {
+            case FP_NORMAL:
+                printf("%f\n", *fakeFloat);
+                break;
+            case FP_NAN:
+                puts("nan");
+                break;
+            case FP_INFINITE:
+                puts("infinite");
+                break;
+            case FP_ZERO:
+                puts("zero");
+                break;
+            case FP_SUBNORMAL:
+                puts("too small");
+                break;
+            default:
+                puts("wtf");
+                break;
             }
+        }
 
+        if (absNum < ULONG_MAX - 1) {
             int64_t sixtyfourbits = intNum;
             double *fakeDouble = (double*)&sixtyfourbits;
-            if (*fakeDouble > 0) {
-                printf("As 64bit float: %lf\n", *fakeDouble);
+
+            printf("As 64bit float: ");
+            switch(fpclassify(*fakeDouble)) {
+            case FP_NORMAL:
+                printf("%lf\n", *fakeDouble);
+                break;
+            case FP_NAN:
+                puts("nan");
+                break;
+            case FP_INFINITE:
+                puts("infinite");
+                break;
+            case FP_ZERO:
+                puts("zero");
+                break;
+            case FP_SUBNORMAL:
+                puts("too small");
+                break;
+            default:
+                puts("wtf");
+                break;
             }
         }
     } else {
         size_t byteCount;
         unsigned char *bytes = mpz_export(NULL, &byteCount, -1, 1, 1, 0, num);
+        printf("bytecount: %lu\n", byteCount);
 
         for (size_t i=0; i < byteCount; i+=4) {
             size_t size = i + 4 > byteCount ? (byteCount % 4) : 4;
