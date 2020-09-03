@@ -8,6 +8,7 @@
 #include <math.h>
 #include <gmp.h>
 #include <string.h>
+#include <stdint.h>
 
 // from user295190, http://stackoverflow.com/a/3974138
 void printBits(int const size, void const * const ptr, size_t offset, int negate)
@@ -66,12 +67,38 @@ void printHelp(const char *progName)
     );
 }
 
+void printFloats(const char *input)
+{
+    double doublenum = atof(input);
+    float floatnum = doublenum;
+
+    uint64_t sixtyfourbits;
+    memcpy(&sixtyfourbits, &doublenum, sizeof(doublenum));
+
+    uint32_t thirtytwobits;
+    memcpy(&thirtytwobits, &floatnum, sizeof(floatnum));
+
+    printf("32 bit: 0x%x\n", thirtytwobits);
+    printBits(sizeof(thirtytwobits), &thirtytwobits, 0, 0);
+
+    printf("64 bit: 0x%lx\n", sixtyfourbits);
+    thirtytwobits = sixtyfourbits & 0xffffffff;
+    printBits(sizeof(thirtytwobits), &thirtytwobits, 0, 0);
+    thirtytwobits = (sixtyfourbits >> 32) & 0xffffffff;
+    printBits(sizeof(thirtytwobits), &thirtytwobits, 32, 0);
+}
+
 int main(int argc, char *argv[])
 {
     if (argc != 2 && argc != 4) {
         printHelp(argv[0]);
         return 1;
     }
+    if (memchr(argv[1], '.', strlen(argv[1]))) {
+        printFloats(argv[1]);
+        return 0;
+    }
+
     mpz_t num;
 
     if (mpz_init_set_str(num, argv[1], 0) < 0) {
