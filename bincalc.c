@@ -7,6 +7,7 @@
 #include <limits.h>
 #include <math.h>
 #include <gmp.h>
+#include <string.h>
 
 // from user295190, http://stackoverflow.com/a/3974138
 void printBits(size_t const size, void const * const ptr, size_t offset, int negate)
@@ -168,11 +169,12 @@ int main(int argc, char *argv[])
 
         if (absNum < UINT_MAX - 1) {
             int thirtytwobits = intNum;
-            float *fakeFloat = (float*)&thirtytwobits;
+            float fakeFloat;
+            memcpy(&fakeFloat, &thirtytwobits, sizeof(float));
             printf("As 32bit float: ");
-            switch(fpclassify(*fakeFloat)) {
+            switch(fpclassify(fakeFloat)) {
             case FP_NORMAL:
-                printf("%f\n", *fakeFloat);
+                printf("%f\n", fakeFloat);
                 break;
             case FP_NAN:
                 puts("nan");
@@ -194,12 +196,13 @@ int main(int argc, char *argv[])
 
         if (absNum < ULONG_MAX - 1) {
             int64_t sixtyfourbits = intNum;
-            double *fakeDouble = (double*)&sixtyfourbits;
+            double fakeDouble;
+            memcpy(&fakeDouble, &sixtyfourbits, sizeof(double));
 
             printf("As 64bit float: ");
-            switch(fpclassify(*fakeDouble)) {
+            switch(fpclassify(fakeDouble)) {
             case FP_NORMAL:
-                printf("%lf\n", *fakeDouble);
+                printf("%lf\n", fakeDouble);
                 break;
             case FP_NAN:
                 puts("nan");
