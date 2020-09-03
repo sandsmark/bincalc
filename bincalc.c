@@ -232,6 +232,7 @@ int main(int argc, char *argv[])
         }
         free(bytes);
     }
+    mpz_clear(num);
 
     return 0;
 }
