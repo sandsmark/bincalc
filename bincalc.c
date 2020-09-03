@@ -10,14 +10,14 @@
 #include <string.h>
 
 // from user295190, http://stackoverflow.com/a/3974138
-void printBits(size_t const size, void const * const ptr, size_t offset, int negate)
+void printBits(int const size, void const * const ptr, size_t offset, int negate)
 {
     unsigned char *b = (unsigned char*) ptr;
     unsigned char byte;
-    int i, j;
+    int j;
 
     printf(" ");
-    for (i=0; i < size * 8; i++) {
+    for (int i=0; i < size * 8; i++) {
         if (!(i % 4) && i > 0) {
             printf(" |");
         }
@@ -25,7 +25,7 @@ void printBits(size_t const size, void const * const ptr, size_t offset, int neg
     }
 
     printf("\n ");
-    for (i=size-1;i>=0;i--) {
+    for (int i=size-1;i>=0;i--) {
         if (i < size-1) {
             printf(" |");
         }
