@@ -171,7 +171,6 @@ int main(int argc, char *argv[])
         gmp_printf("  %Zd %c %Zd   = %Zd\n", num, op, num2, result);
         gmp_printf("0x%Zx %c 0x%Zx = 0x%Zx\n", num, op, num2, result);
 
-        mpz_clear(num);
         mpz_set(num, result);
         mpz_clear(num2);
         mpz_clear(result);
