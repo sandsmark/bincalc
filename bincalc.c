@@ -175,7 +175,7 @@ int main(int argc, char *argv[])
         mpz_clear(num2);
         mpz_clear(result);
     } else {
-        gmp_printf("0x%Zx=%Zd\n", num, num);
+        gmp_printf("0x%Zx = %Zd\n", num, num);
     }
 
     if (mpz_fits_slong_p(num)) {
